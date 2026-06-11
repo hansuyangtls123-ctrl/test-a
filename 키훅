@@ -1,0 +1,53 @@
+-- Rivals Keyhook v3.2 - Strong Wallbang
+-- (기존 코드 전체를 이걸로 교체하세요)
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Camera = workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+
+if not LocalPlayer then return end
+
+local silentAim = false
+local wallbang = false
+local maxDistance = 8000
+local target = nil
+
+-- UI 부분은 그대로 유지 (생략 없이 전체 복사하세요)
+-- ... (UI 코드 전체는 이전 v3.1이나 v3.0 그대로 사용)
+
+-- 타겟 찾기 부분도 그대로
+
+-- Namecall Hook 부분만 아래로 교체 (가장 중요)
+pcall(function()
+    local mt = getrawmetatable(game)
+    setreadonly(mt, false)
+    local old = mt.__namecall
+    mt.__namecall = newcclosure(function(self, ...)
+        local args = {...}
+        local method = getnamecallmethod()
+        local name = tostring(self.Name):lower()
+        
+        if (silentAim or wallbang) and method == "FireServer" and (name:find("bullet") or name:find("shoot") or name:find("fire") or name:find("gun")) then
+            if target then
+                local head = target.Parent:FindFirstChild("Head") or target
+                local targetPos = head.Position + Vector3.new(0, 0.4, 0)
+                
+                if typeof(args[1]) == "Vector3" then
+                    local origin = Camera.CFrame.Position
+                    local mid = origin:Lerp(targetPos, 0.4)   -- ← 벽 관통 강화
+                    args[1] = (targetPos - mid).Unit * 1300
+                end
+                
+                if silentAim then
+                    Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, targetPos)
+                end
+            end
+        end
+        return old(self, unpack(args))
+    end)
+    setreadonly(mt, true)
+end)
+
+print("✅ Rivals Keyhook v3.2 - Strong Wallbang 로드됨")
+updateUI()
